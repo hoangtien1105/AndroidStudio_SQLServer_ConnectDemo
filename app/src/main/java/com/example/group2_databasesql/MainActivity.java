@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
     List<Member> memberList;
     MemberAdapter adapter;
     TextView msg;
-    Button button;
+    Button btnConnectDB, btnAdd;
 
 
     @Override
@@ -47,14 +47,18 @@ public class MainActivity extends AppCompatActivity {
         listView = findViewById(R.id.listViewMembers);
         memberList = new ArrayList<>();
         msg = findViewById(R.id.textView);
-        button = findViewById(R.id.btnAdd);
-
+        btnConnectDB = findViewById(R.id.btnConnectDB);
+        btnAdd = findViewById(R.id.btnAdd);
 
 
         ConnectionClass connectionClass = new ConnectionClass();
         con = connectionClass.CONN();
 
-        connectAndLoadData();
+        // Nút kết nối DB
+        btnConnectDB.setOnClickListener(v -> {
+            // Kết nối đến cơ sở dữ liệu
+            connectAndLoadData();
+        });
 
         listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
@@ -70,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
             showUpdateDialog(selectedMember, position);
         });
 
-        button.setOnClickListener(v -> showAddDialog());
+        btnAdd.setOnClickListener(v -> showAddDialog());
 
     }
 
@@ -115,7 +119,12 @@ public class MainActivity extends AppCompatActivity {
                 // Hiển thị danh sách lên ListView
                 adapter = new MemberAdapter(MainActivity.this, R.layout.item_member, memberList);
                 listView.setAdapter(adapter);
+                listView.setVisibility(View.VISIBLE);
+                btnAdd.setVisibility(View.VISIBLE);
+                btnConnectDB.setVisibility(View.GONE); // Ẩn nút kết nối DB
 
+                Toast.makeText(this, str, Toast.LENGTH_SHORT).show();
+                msg.setText("Connected to SQL successfully");
                 Toast.makeText(this, str, Toast.LENGTH_SHORT).show();
                 msg.setText("Connected to SQL successfully");
 

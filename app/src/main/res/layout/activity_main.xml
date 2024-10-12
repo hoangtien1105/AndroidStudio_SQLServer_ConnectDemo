@@ -6,38 +6,73 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity"
-    android:layout_gravity="center">
+    android:padding="16dp">
 
+    <!-- TextView hiển thị trạng thái -->
 
+    <!-- Button kết nối DB -->
     <TextView
         android:id="@+id/textView"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="60dp"
-        android:text="Hello World!"
-        android:textSize="25sp"
+        android:layout_marginTop="52dp"
+        android:background="#A1CEE2"
+        android:elevation="8dp"
+        android:gravity="center"
+        android:padding="16dp"
+        android:text="Group 2 tutorial \nAndroid Java - MS SQL Server"
+        android:textColor="#0A123A"
+        android:textSize="24sp"
+        android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.494"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <ListView
-        android:id="@+id/listViewMembers"
-        android:layout_width="331dp"
-        android:layout_height="504dp"
-        android:layout_marginTop="44dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_percent="1.0" />
 
     <Button
-        android:id="@+id/btnAdd"
-        android:layout_width="wrap_content"
+        android:id="@+id/btnConnectDB"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Add Member"
+        android:text="Kết Nối DB"
+        android:textAllCaps="false"
+        app:layout_constraintTop_toBottomOf="@id/textView"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintWidth_percent="0.6"
+        android:layout_marginTop="16dp"
+        android:backgroundTint="@color/black"
+        android:textColor="@color/white"/>
+
+    <!-- ListView hiển thị thành viên - ban đầu sẽ ẩn -->
+    <ListView
+        android:id="@+id/listViewMembers"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/btnConnectDB"
+        app:layout_constraintBottom_toTopOf="@id/btnAdd"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHeight_percent="0.6"
+        android:dividerHeight="8dp"
+        android:divider="@android:color/darker_gray"/>
+
+    <!-- Button thêm thành viên - ban đầu sẽ ẩn -->
+    <Button
+        android:id="@+id/btnAdd"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="88dp"
+        android:backgroundTint="@color/black"
+        android:text="Thêm Thành Viên"
+        android:textAllCaps="false"
+        android:textColor="@android:color/white"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.503"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/listViewMembers" />
+        app:layout_constraintWidth_percent="0.6" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

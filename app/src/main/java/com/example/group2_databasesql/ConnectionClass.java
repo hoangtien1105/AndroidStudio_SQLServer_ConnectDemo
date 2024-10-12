@@ -8,7 +8,7 @@ import java.sql.SQLException;
 
 public class ConnectionClass {
     String classes = "net.sourceforge.jtds.jdbc.Driver";
-    protected static String ip="10.0.2.2";
+    protected static String ip="10.0.2.2";//192.168.56.1
     protected static  String port="1433";
     protected static String db="SaleManagement";
     protected static String un="sa";
