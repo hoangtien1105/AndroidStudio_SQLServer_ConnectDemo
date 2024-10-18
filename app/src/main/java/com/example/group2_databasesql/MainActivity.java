@@ -13,11 +13,6 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-
-import org.w3c.dom.Text;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -35,7 +30,7 @@ public class MainActivity extends AppCompatActivity {
     List<Member> memberList;
     MemberAdapter adapter;
     TextView msg;
-    Button btnConnectDB, btnAdd;
+    Button btnConnectSQLServer, btnConnectMySQL, btnAdd, btnDisconnect;
 
 
     @Override
@@ -47,17 +42,23 @@ public class MainActivity extends AppCompatActivity {
         listView = findViewById(R.id.listViewMembers);
         memberList = new ArrayList<>();
         msg = findViewById(R.id.textView);
-        btnConnectDB = findViewById(R.id.btnConnectDB);
+        btnConnectSQLServer = findViewById(R.id.btnConnectSQLServer);
+        btnConnectMySQL = findViewById(R.id.btnConnectMySQL);
         btnAdd = findViewById(R.id.btnAdd);
+        btnDisconnect = findViewById(R.id.btnDisconnect);
 
 
-        ConnectionClass connectionClass = new ConnectionClass();
-        con = connectionClass.CONN();
+        btnConnectSQLServer.setOnClickListener(v -> {
+            ConnectionClass connectionClass = new ConnectionClass();
+            con = connectionClass.CONN_SQLServer();
+            connectAndLoadDataSQLServer();  // Call the SQL Server-specific method
+        });
 
-        // Nút kết nối DB
-        btnConnectDB.setOnClickListener(v -> {
-            // Kết nối đến cơ sở dữ liệu
-            connectAndLoadData();
+        // MySQL Button
+        btnConnectMySQL.setOnClickListener(v -> {
+            ConnectionClass connectionClass = new ConnectionClass();
+            con = connectionClass.CONN_MySQL();
+            connectAndLoadDataMySQL();  // Call the MySQL-specific method
         });
 
         listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
@@ -75,10 +76,32 @@ public class MainActivity extends AppCompatActivity {
         });
 
         btnAdd.setOnClickListener(v -> showAddDialog());
+        btnDisconnect.setOnClickListener(v -> {
+            try {
+                if (con != null && !con.isClosed()) {
+                    con.close(); // Close the connection
+                    Toast.makeText(MainActivity.this, "Disconnected from database", Toast.LENGTH_SHORT).show();
 
+                    // Hide the ListView and Add button
+                    listView.setVisibility(View.GONE);
+                    btnAdd.setVisibility(View.GONE);
+
+                    // Show the connect buttons again
+                    btnConnectMySQL.setVisibility(View.VISIBLE);
+                    btnConnectSQLServer.setVisibility(View.VISIBLE);
+
+                    // Hide the Disconnect button
+                    btnDisconnect.setVisibility(View.GONE);
+
+                    msg.setText("Disconnected successfully");
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                Toast.makeText(MainActivity.this, "Error while disconnecting!", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
-
-    public void connectAndLoadData() {
+    public void connectAndLoadDataSQLServer() {
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         executorService.execute(() -> {
             try {
@@ -87,12 +110,12 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     str = "Connected with SQL Server";
 
-                    // Truy vấn SQL
+                    // Query SQL Server
                     String query = "SELECT MemberId, Email, CompanyName, City, Country, Password FROM [SaleManagement].[dbo].[Member]";
                     Statement stmt = con.createStatement();
                     ResultSet rs = stmt.executeQuery(query);
 
-                    // Lấy dữ liệu từ ResultSet
+                    // Fetch data from ResultSet
                     while (rs.next()) {
                         int memberId = rs.getInt("MemberId");
                         String email = rs.getString("Email");
@@ -101,7 +124,7 @@ public class MainActivity extends AppCompatActivity {
                         String country = rs.getString("Country");
                         String password = rs.getString("Password");
 
-                        // Thêm member vào danh sách
+                        // Add member to the list
                         memberList.add(new Member(memberId, email, companyName, city, country, password));
                     }
                 }
@@ -109,40 +132,90 @@ public class MainActivity extends AppCompatActivity {
                 throw new RuntimeException(e);
             }
 
+            // Update UI in the main thread
             runOnUiThread(() -> {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-
-                // Hiển thị danh sách lên ListView
+                // Set up ListView adapter
                 adapter = new MemberAdapter(MainActivity.this, R.layout.item_member, memberList);
                 listView.setAdapter(adapter);
                 listView.setVisibility(View.VISIBLE);
                 btnAdd.setVisibility(View.VISIBLE);
-                btnConnectDB.setVisibility(View.GONE); // Ẩn nút kết nối DB
 
+                // Show the Disconnect button and hide Connect buttons
+                btnDisconnect.setVisibility(View.VISIBLE);
+                btnConnectMySQL.setVisibility(View.GONE);
+                btnConnectSQLServer.setVisibility(View.GONE);
+
+                // Display success message
                 Toast.makeText(this, str, Toast.LENGTH_SHORT).show();
                 msg.setText("Connected to SQL successfully");
-                Toast.makeText(this, str, Toast.LENGTH_SHORT).show();
-                msg.setText("Connected to SQL successfully");
-
             });
         });
     }
 
-    // Hàm hiển thị dialog để xóa thành viên
-    private void showDeleteDialog(Member member, int position) {
-        AlertDialog.Builder dialogXoa = new AlertDialog.Builder(this);
-        dialogXoa.setMessage("Bạn có chắc chắn muốn xóa thành viên " + member.getEmail() + "?");
+public void connectAndLoadDataMySQL() {
+    ExecutorService executorService = Executors.newSingleThreadExecutor();
+    executorService.execute(() -> {
+        try {
+            if (con == null) {
+                str = "Error";
+            } else {
+                str = "Connected with MySQL";
 
-        dialogXoa.setPositiveButton("Yes", (dialogInterface, i) -> {
+                // MySQL query
+                String query = "SELECT MemberId, Email, CompanyName, City, Country, Password FROM Member";
+                Statement stmt = con.createStatement();
+                ResultSet rs = stmt.executeQuery(query);
+
+                // Retrieve data from ResultSet
+                while (rs.next()) {
+                    int memberId = rs.getInt("MemberId");
+                    String email = rs.getString("Email");
+                    String companyName = rs.getString("CompanyName");
+                    String city = rs.getString("City");
+                    String country = rs.getString("Country");
+                    String password = rs.getString("Password");
+
+                    // Add member to the list
+                    memberList.add(new Member(memberId, email, companyName, city, country, password));
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        runOnUiThread(() -> {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+            // Display the list in ListView
+            adapter = new MemberAdapter(MainActivity.this, R.layout.item_member, memberList);
+            listView.setAdapter(adapter);
+            listView.setVisibility(View.VISIBLE);
+            btnAdd.setVisibility(View.VISIBLE);
+            btnDisconnect.setVisibility(View.VISIBLE); // Show the Disconnect button
+            btnConnectMySQL.setVisibility(View.GONE);
+            btnConnectSQLServer.setVisibility(View.GONE); // Ẩn nút kết nối DB
+
+            Toast.makeText(this, str, Toast.LENGTH_SHORT).show();
+            msg.setText("Connected to MySQL successfully");
+        });
+    });
+}
+
+
+    private void showDeleteDialog(Member member, int position) {
+        AlertDialog.Builder dialogDelete = new AlertDialog.Builder(this);
+        dialogDelete.setMessage("Are you sure you want to delete member " + member.getEmail() + "?");
+
+        dialogDelete.setPositiveButton("Yes", (dialogInterface, i) -> {
             ExecutorService executorService = Executors.newSingleThreadExecutor();
             executorService.execute(() -> {
                 try {
                     if (con != null) {
-                        String deleteQuery = "DELETE FROM [SaleManagement].[dbo].[Member] WHERE MemberId = ?";
+                        String deleteQuery = "DELETE FROM Member WHERE MemberId = ?";
                         PreparedStatement stmt = con.prepareStatement(deleteQuery);
                         stmt.setInt(1, member.getMemberId());
                         stmt.executeUpdate();
@@ -151,7 +224,7 @@ public class MainActivity extends AppCompatActivity {
 
                         runOnUiThread(() -> {
                             adapter.notifyDataSetChanged();
-                            Toast.makeText(MainActivity.this, "Đã xóa thành công!", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MainActivity.this, "Successfully deleted!", Toast.LENGTH_SHORT).show();
                         });
                     }
                 } catch (Exception e) {
@@ -159,12 +232,10 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         });
-
-        dialogXoa.setNegativeButton("No", (dialogInterface, i) -> dialogInterface.dismiss());
-        dialogXoa.show();
+        dialogDelete.setNegativeButton("No", (dialogInterface, i) -> dialogInterface.dismiss());
+        dialogDelete.show();
     }
 
-    // Hàm hiển thị dialog để cập nhật thông tin thành viên
     private void showUpdateDialog(Member member, int position) {
         Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.dialog_update_member);
@@ -182,20 +253,20 @@ public class MainActivity extends AppCompatActivity {
             executorService.execute(() -> {
                 try {
                     if (con != null) {
-                        String updateQuery = "UPDATE [SaleManagement].[dbo].[Member] SET Email = ?, CompanyName = ? WHERE MemberId = ?";
+                        String updateQuery = "UPDATE Member SET Email = ?, CompanyName = ? WHERE MemberId = ?";
                         PreparedStatement stmt = con.prepareStatement(updateQuery);
                         stmt.setString(1, newEmail);
                         stmt.setString(2, newCompanyName);
                         stmt.setInt(3, member.getMemberId());
                         stmt.executeUpdate();
 
-                        // Cập nhật lại thông tin trong danh sách
+                        // Update the list with new information
                         member.setEmail(newEmail);
                         member.setCompanyName(newCompanyName);
 
                         runOnUiThread(() -> {
                             adapter.notifyDataSetChanged();
-                            Toast.makeText(MainActivity.this, "Cập nhật thành công!", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MainActivity.this, "Updated successfully!", Toast.LENGTH_SHORT).show();
                             dialog.dismiss();
                         });
                     }
@@ -205,17 +276,14 @@ public class MainActivity extends AppCompatActivity {
             });
         });
 
-        // Điền dữ liệu hiện tại vào dialog
         edtEmail.setText(member.getEmail());
         edtCompanyName.setText(member.getCompanyName());
-
-
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
 
         dialog.show();
-
-        dialog.getWindow().setLayout(800, 1000); // Set width and height
+        dialog.getWindow().setLayout(800, 1000);
+        // Set width and height
     }
-
 
     private void showAddDialog() {
         Dialog dialog = new Dialog(this);
@@ -226,11 +294,11 @@ public class MainActivity extends AppCompatActivity {
         Button btnAdd = dialog.findViewById(R.id.btnUpdate);
         Button btnCancel = dialog.findViewById(R.id.btnCancel);
 
-        // Đặt title cho dialog (vì đây là form thêm mới)
+        // Set title for the dialog (this is the add new member form)
         TextView txtTitle = dialog.findViewById(R.id.txtTitle);
-        txtTitle.setText("Thêm Thành Viên");
+        txtTitle.setText("Add Member");
 
-        // Đổi text của nút Update thành Add
+        // Change text of the Update button to Add
         btnAdd.setText("Add");
 
         btnAdd.setOnClickListener(v -> {
@@ -238,7 +306,7 @@ public class MainActivity extends AppCompatActivity {
             String companyName = edtCompanyName.getText().toString().trim();
 
             if (email.isEmpty() || companyName.isEmpty()) {
-                Toast.makeText(MainActivity.this, "Vui lòng nhập đầy đủ thông tin!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "Please fill in all information!", Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -246,14 +314,13 @@ public class MainActivity extends AppCompatActivity {
             executorService.execute(() -> {
                 try {
                     if (con != null) {
-                        // Giá trị mặc định cho các field còn lại
+                        // Default values for other fields
                         String city = "test";
                         String country = "example";
                         String password = "example";
 
-                        // Thực hiện lệnh INSERT để thêm thành viên mới
-                        String insertQuery = "INSERT INTO [SaleManagement].[dbo].[Member] (Email, CompanyName, City, Country, Password) " +
-                                "VALUES (?, ?, ?, ?, ?)";
+                        // Perform INSERT to add new member
+                        String insertQuery = "INSERT INTO Member (Email, CompanyName, City, Country, Password) VALUES (?, ?, ?, ?, ?)";
                         PreparedStatement stmt = con.prepareStatement(insertQuery);
                         stmt.setString(1, email);
                         stmt.setString(2, companyName);
@@ -262,13 +329,13 @@ public class MainActivity extends AppCompatActivity {
                         stmt.setString(5, password);
                         stmt.executeUpdate();
 
-                        // Thêm member mới vào danh sách và cập nhật giao diện
-                        Member newMember = new Member(0, email, companyName, city, country, password); // MemberId sẽ tự động tăng
+                        // Add new member to the list and update the UI
+                        Member newMember = new Member(0, email, companyName, city, country, password); // MemberId will auto-increment
                         memberList.add(newMember);
 
                         runOnUiThread(() -> {
                             adapter.notifyDataSetChanged();
-                            Toast.makeText(MainActivity.this, "Thêm thành viên thành công!", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MainActivity.this, "Member added successfully!", Toast.LENGTH_SHORT).show();
                             dialog.dismiss();
                         });
                     }
@@ -281,10 +348,7 @@ public class MainActivity extends AppCompatActivity {
         btnCancel.setOnClickListener(v -> dialog.dismiss());
 
         dialog.show();
-
-        // Điều chỉnh kích thước dialog nếu cần
         dialog.getWindow().setLayout(800, 800); // Set width and height
     }
-
 
 }
